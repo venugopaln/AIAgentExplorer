@@ -1,0 +1,26 @@
+<configuration>
+	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>logs/ai-agent-service.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>logs/ai-agent-service.%d{yyyy-MM-dd}.gz</fileNamePattern>
+		</rollingPolicy>
+
+		<encoder>
+		    <pattern>%d{HH:mm:ss.SSS} %-5level %X{requestId} %logger{36} %M %L  %m%n</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} %-5level %X{requestId} %logger{36} %M %L %m%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="com.medplus" level="INFO" />
+
+	<root level="INFO">
+		<appender-ref ref="FILE"/>
+		<appender-ref ref="CONSOLE"/>
+	</root>
+
+</configuration>
