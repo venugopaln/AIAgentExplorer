@@ -15,21 +15,26 @@ import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.Model;
-import com.google.gson.Gson;
 import com.medplus.aiagent.dao.AIAgentQueryDao;
+import com.medplus.aiagent.service.impl.AIAgentService;
 
 @RestController
 @RequestMapping("/api/aiagent")
 public class AIAgentController {
 
+	@Autowired
+	AIAgentService aiAgentService;
+	
     @Autowired
     private AIAgentQueryDao aiAgentQueryDao;
 
     @GetMapping("/input")
     public List<Map<String, Object>> executeQuery(@RequestParam String inputPrompt) {
-    	List<Map<String, Object>> output;
+    	List<Map<String, Object>> output=null;
 		try {
 			System.out.println("inputPrompt :"+inputPrompt);
+			//System.out.println("Model "+Model.CLAUDE_SONNET_4_20250514);
+			//String finalQuery = aiAgentService.getQueryByAgentString(inputPrompt, "anthropic");
 			String finalQuery = getQueryByAgent(inputPrompt);
 			System.out.println("finalQuery :"+finalQuery);
 			output = aiAgentQueryDao.executeQuery(finalQuery);
@@ -64,6 +69,15 @@ public class AIAgentController {
             System.out.println("finalOutput before replace:"+finalOutput);
             finalOutput = finalOutput.replaceAll("table_data_sale_detail", "tbl_sale_detail").replaceAll("table_data_sale", "tbl_sale_header")
             		.replaceAll("table_itemname", "tbl_product").replaceAll("table_location", "tbl_store");
+            if(!(finalOutput.contains("limit") || finalOutput.contains("LIMIT"))) {
+            	if(finalOutput.contains(";")) {
+            		System.out.println("Replacing Semicolumn with limit");
+            		finalOutput  = finalOutput.replaceAll(";", " LIMIT 1000");
+            	}else {
+            		System.out.println("addding limit");
+            		finalOutput = finalOutput+" LIMIT 1000";
+            	}
+            }
             return finalOutput;
 		
 	}

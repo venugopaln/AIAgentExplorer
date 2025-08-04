@@ -1,0 +1,8 @@
+AIAgent/node_modules/
+AIAgent/package-lock.json
+ai-agent-service/.classpath
+ai-agent-service/.project
+ai-agent-service/.settings/
+ai-agent-service/bin/
+ai-agent-service/logs/
+ai-agent-service/target/
