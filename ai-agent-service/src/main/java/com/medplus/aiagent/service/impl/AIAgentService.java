@@ -1,8 +1,13 @@
 package com.medplus.aiagent.service.impl;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.medplus.aiagent.util.SQLQueryProcessor;
+
 import dev.langchain4j.model.anthropic.AnthropicChatModel;
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.vertexai.VertexAiChatModel;
 import dev.langchain4j.service.AiServices;
@@ -10,6 +15,9 @@ import dev.langchain4j.service.SystemMessage;
 
 @Service
 public class AIAgentService {
+	
+	@Value("${com.agent.anthropic.api.key}")
+	private String anthropicApiKey;
 
 	public String getQueryByAgentString(String promptInput, String AIType) {
 		
@@ -19,11 +27,46 @@ public class AIAgentService {
 			return getQueryByGemini(promptInput);
 		}else if("anthropic".equalsIgnoreCase(AIType)) {
 			return getQueryByAnthropic(promptInput);
+		}else if("ollama".equalsIgnoreCase(AIType)) {
+			return getQueryByOllama(promptInput);
 		}
 		return "";
 	}
 
+	public static String getFinalOutput(String finalOutput) {
+		finalOutput = finalOutput.replaceAll("table_data_sale_detail", "tbl_sale_detail").replaceAll("table_data_sale", "tbl_sale_header")
+				.replaceAll("table_itemname", "tbl_product").replaceAll("table_location", "tbl_store");
+		/*
+		 * if(!(finalOutput.contains("limit") || finalOutput.contains("LIMIT"))) {
+		 * if(finalOutput.contains(";")) {
+		 * System.out.println("Replacing Semicolumn with limit"); finalOutput =
+		 * finalOutput.replaceAll(";", " LIMIT 1000"); }else {
+		 * System.out.println("addding limit"); finalOutput = finalOutput+" LIMIT 1000";
+		 * } }
+		 */
+		System.out.println("Before clean Query :"+finalOutput);
+		finalOutput = SQLQueryProcessor.cleanAndFormatAIQuery(finalOutput);
+		return finalOutput;
+	}
 	
+	private String getQueryByOllama(String promptInput) {
+		System.out.println("In ollama promptInput "+promptInput);
+		ChatLanguageModel model = OllamaChatModel.builder().baseUrl("http://localhost:11434").modelName("qwen3-coder:30b") //llama3:8b,gemma,duckdb-nsql:7b,qwen2.5-coder:1.5b,tinyllama:1.1b,qwen2.5-coder:7b,qwen3:8b,qwen3-coder:30b,qwen2.5-coder:32b
+				.build();
+
+		String note = getDefaultNote();
+		String message = getSaleContext()+", "+note+", Input :"+promptInput;
+		String answer = model.generate(message);
+		System.out.println(answer);
+		
+		return getFinalOutput(answer);
+	}
+
+	private String getDefaultNote() {
+		return "You are a SQL generator. Given a natural language request, output only the corresponding SQL query. Do not include explanations or formatting.,Use always context available fields only don't use select *";
+	}
+
+
 	  interface Assistant {
 	  
 		  @SystemMessage("You are a SQL generator. Given a natural language request, output only the corresponding SQL query. Do not include explanations or formatting.,Use always context available fields only don't use select *"
@@ -35,13 +78,13 @@ public class AIAgentService {
 	      String response = null;
 		  try {
 			  AnthropicChatModel model = AnthropicChatModel.builder()
-					  .apiKey("")
+					  .apiKey(anthropicApiKey)
 					  .modelName("claude-sonnet-4-20250514")
 					  .temperature(0.7)
 					  .build();
 			  
 			  Assistant assistant = AiServices.create(Assistant.class, model);
-			  String note = "You are a SQL generator. Given a natural language request, output only the corresponding SQL query. Do not include explanations or formatting.,Use always context available fields only don't use select *";
+			  String note = getDefaultNote();
 			  String message = getSaleContext()+", "+note+", Input :"+promptInput;
 			  response = assistant.chat(message);
 			
@@ -49,7 +92,7 @@ public class AIAgentService {
 		  } catch (Exception e) {
 			e.printStackTrace();
 		  }
-		  return response;
+		  return getFinalOutput(response);
 		 
 	}
 	

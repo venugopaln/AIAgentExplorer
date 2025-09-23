@@ -100,6 +100,7 @@ const LoadingSpinner = () => (
 
 function App() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState('Anthropic');
   const [jsonData, setJsonData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -115,8 +116,8 @@ function App() {
     setJsonData(null);
 
     try {
-      // Call the real API endpoint
-      const apiUrl = `http://localhost:8080/api/aiagent/input?inputPrompt=${encodeURIComponent(searchTerm)}`;
+      // Call the real API endpoint with AI Provider parameter
+      const apiUrl = `http://localhost:8080/api/aiagent/input?inputPrompt=${encodeURIComponent(searchTerm)}&aiProvider=${encodeURIComponent(selectedProvider)}`;
       
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -195,11 +196,26 @@ function App() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask the AI Agent anything..."
+                placeholder="Ask the AI Agent about Sale statistics..."
                 className="search-input"
                 disabled={loading}
               />
             </div>
+            
+            <div className="provider-select-container">
+              <label htmlFor="provider-select" className="provider-label">AI Provider:</label>
+              <select
+                id="provider-select"
+                value={selectedProvider}
+                onChange={(e) => setSelectedProvider(e.target.value)}
+                className="provider-select"
+                disabled={loading}
+              >
+                <option value="Anthropic">Anthropic</option>
+                <option value="Ollama">Ollama</option>
+              </select>
+            </div>
+            
             <button 
               onClick={handleSearch}
               className="search-button"
@@ -208,11 +224,11 @@ function App() {
               {loading && <LoadingSpinner />}
               {loading ? 'Processing...' : '🤖 Ask AI'}
             </button>
+            
             {jsonData && (
               <button 
                 onClick={clearResults}
-                className="search-button"
-                style={{background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)'}}
+                className="search-button clear-button"
               >
                 Clear
               </button>

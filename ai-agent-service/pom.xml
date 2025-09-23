@@ -235,6 +235,13 @@
 	        <artifactId>langchain4j-anthropic</artifactId>
 	        <version>0.28.0</version>
 	    </dependency>
+	    
+	    <dependency>
+	        <groupId>dev.langchain4j</groupId>
+	        <artifactId>langchain4j-ollama</artifactId>
+	        <version>0.28.0</version>
+	    </dependency>
+	    
 
 	</dependencies>
 

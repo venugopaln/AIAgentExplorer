@@ -29,15 +29,19 @@ public class AIAgentController {
     private AIAgentQueryDao aiAgentQueryDao;
 
     @GetMapping("/input")
-    public List<Map<String, Object>> executeQuery(@RequestParam String inputPrompt) {
+    public List<Map<String, Object>> executeQuery(@RequestParam String inputPrompt, @RequestParam String aiProvider) {
     	List<Map<String, Object>> output=null;
 		try {
-			System.out.println("inputPrompt :"+inputPrompt);
+			System.out.println("inputPrompt :"+inputPrompt+", aiProvider :"+aiProvider);
 			//System.out.println("Model "+Model.CLAUDE_SONNET_4_20250514);
-			//String finalQuery = aiAgentService.getQueryByAgentString(inputPrompt, "anthropic");
-			String finalQuery = getQueryByAgent(inputPrompt);
+			String finalQuery = aiAgentService.getQueryByAgentString(inputPrompt, aiProvider);
 			System.out.println("finalQuery :"+finalQuery);
+			//String finalQuery2 = getQueryByAgent(inputPrompt);
+			//System.out.println("finalQuery2 :"+finalQuery2);
 			output = aiAgentQueryDao.executeQuery(finalQuery);
+			if(output != null && output.size()>1000) {
+				output = output.subList(0, 1000);
+			}
 			System.out.println("Output :"+output);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -67,20 +71,12 @@ public class AIAgentController {
                     .forEach(textBlock -> aiOutput.append(textBlock.text()));
             String finalOutput = aiOutput.toString();
             System.out.println("finalOutput before replace:"+finalOutput);
-            finalOutput = finalOutput.replaceAll("table_data_sale_detail", "tbl_sale_detail").replaceAll("table_data_sale", "tbl_sale_header")
-            		.replaceAll("table_itemname", "tbl_product").replaceAll("table_location", "tbl_store");
-            if(!(finalOutput.contains("limit") || finalOutput.contains("LIMIT"))) {
-            	if(finalOutput.contains(";")) {
-            		System.out.println("Replacing Semicolumn with limit");
-            		finalOutput  = finalOutput.replaceAll(";", " LIMIT 1000");
-            	}else {
-            		System.out.println("addding limit");
-            		finalOutput = finalOutput+" LIMIT 1000";
-            	}
-            }
+            finalOutput = AIAgentService.getFinalOutput(finalOutput);
             return finalOutput;
 		
 	}
+
+	
 
 	private String getSaleContext() {
 		String saleContext = "CREATE TABLE `table_data_sale` (\n"
